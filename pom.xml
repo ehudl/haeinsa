@@ -24,9 +24,10 @@
     </parent>
 
     <groupId>kr.co.vcnc.haeinsa</groupId>
-    <artifactId>haeinsa</artifactId>
+    <artifactId>haeinsa_cdh5</artifactId>
     <version>1.0.6-SNAPSHOT</version>
     <packaging>jar</packaging>
+
 
     <name>haeinsa</name>
     <url>https://github.com/vcnc/haeinsa</url>
@@ -59,6 +60,9 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <hadoop.version>2.5.0-cdh5.3.0</hadoop.version>
+        <hbase.version>0.98.6-cdh5.3.0</hbase.version>
+        <github.global.server>github</github.global.server>
     </properties>
 
     <developers>
@@ -88,13 +92,23 @@
     <dependencies>
         <dependency>
             <groupId>org.apache.hbase</groupId>
-            <artifactId>hbase</artifactId>
-            <version>0.94.3</version>
+            <artifactId>hbase-server</artifactId>
+            <version>${hbase.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.hbase</groupId>
+            <artifactId>hbase-common</artifactId>
+            <version>${hbase.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.hbase</groupId>
+            <artifactId>hbase-client</artifactId>
+            <version>${hbase.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-common</artifactId>
-            <version>0.22.0</version>
+            <version>${hadoop.version}</version>
         </dependency>
         <dependency>
             <groupId>com.google.guava</groupId>
@@ -108,29 +122,30 @@
         </dependency>
         <dependency>
             <groupId>org.apache.hbase</groupId>
-            <artifactId>hbase</artifactId>
-            <version>0.94.3</version>
+            <artifactId>hbase-common</artifactId>
+            <version>${hbase.version}</version>
             <classifier>tests</classifier>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-common-test</artifactId>
-            <version>0.22.0</version>
+            <artifactId>hadoop-common</artifactId>
+            <version>${hadoop.version}</version>
+            <classifier>tests</classifier>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-hdfs-test</artifactId>
-            <version>0.22.0</version>
-            <scope>test</scope>
-            <exclusions>
-                <exclusion>
-                    <artifactId>hadoop-common</artifactId>
-                    <groupId>org.apache.hadoop</groupId>
-                </exclusion>
-            </exclusions>
-        </dependency>
+        <!--<dependency>-->
+            <!--<groupId>org.apache.hadoop</groupId>-->
+            <!--<artifactId>hadoop-hdfs-test</artifactId>-->
+            <!--<version>${hadoop.version}</version>-->
+            <!--<scope>test</scope>-->
+            <!--<exclusions>-->
+                <!--<exclusion>-->
+                    <!--<artifactId>hadoop-common</artifactId>-->
+                    <!--<groupId>org.apache.hadoop</groupId>-->
+                <!--</exclusion>-->
+            <!--</exclusions>-->
+        <!--</dependency>-->
         <dependency>
             <groupId>com.google.code.findbugs</groupId>
             <artifactId>jsr305</artifactId>
@@ -145,9 +160,48 @@
         </dependency>
     </dependencies>
 
+
+    <distributionManagement>
+        <repository>
+            <id>internal.repo</id>
+            <name>Temporary Staging Repository</name>
+            <url>file://${project.build.directory}/mvn-repo</url>
+        </repository>
+    </distributionManagement>
+
     <build>
         <finalName>haeinsa-${project.version}</finalName>
         <plugins>
+            <plugin>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <version>2.8.1</version>
+                <configuration>
+                    <altDeploymentRepository>internal.repo::default::file://${project.build.directory}/mvn-repo</altDeploymentRepository>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>com.github.github</groupId>
+                <artifactId>site-maven-plugin</artifactId>
+                <version>0.11</version>
+                <configuration>
+                    <message>Maven artifacts for ${project.version}</message>  <!-- git commit message -->
+                    <noJekyll>true</noJekyll>                                  <!-- disable webpage processing -->
+                    <outputDirectory>${project.build.directory}/mvn-repo</outputDirectory> <!-- matches distribution management repository url above -->
+                    <branch>refs/heads/mvn-repo</branch>                       <!-- remote branch name -->
+                    <includes><include>**/*</include></includes>
+                    <repositoryName>mvn-repo</repositoryName>      <!-- github repo name -->
+                    <repositoryOwner>ehudl</repositoryOwner>    <!-- github username  -->
+                </configuration>
+                <executions>
+                    <!-- run site-maven-plugin's 'site' target as part of the build's normal 'deploy' phase -->
+                    <execution>
+                        <goals>
+                            <goal>site</goal>
+                        </goals>
+                        <phase>deploy</phase>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -484,4 +538,15 @@
             </build>
         </profile>
     </profiles>
+
+    <repositories>
+        <repository>
+            <id>Cloudera</id>
+            <name>Cloudera</name>
+            <url>https://repository.cloudera.com/artifactory/cloudera-repos/</url>
+        </repository>
+
+    </repositories>
+
+
 </project>
